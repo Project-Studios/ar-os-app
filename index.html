@@ -38,7 +38,7 @@
             padding: 6px 16px; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold;
             border-radius: 4px; cursor: pointer; transition: all 0.2s ease;
         }
-        .os-btn:hover { background: rgba(0, 255, 204, 0.3); boxShadow: 0 0 10px #00ffcc; }
+        .os-btn:hover { background: rgba(0, 255, 204, 0.3); box-shadow: 0 0 10px #00ffcc; }
 
         /* Sync-Linked App Portals */
         .app-portal-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; width: 100%; height: 55%; padding: 10px; }
@@ -119,6 +119,113 @@
 
     </div>
 
-    <script src="app.js"></script>
+    <!-- ALL APPLICATION LOGIC COMBINED INTO ONE SINGLE BALANCED TAG LAYER -->
+    <script>
+        const cameraSelect = document.getElementById('cameraSelect');
+        const videoFeeds = document.querySelectorAll('.bg-video-feed');
+        const launchButtons = document.querySelectorAll('.launch-btn');
+        const leftPortal = document.querySelector('#viewport-l .portal-frame');
+        const rightPortal = document.querySelector('#viewport-r .portal-frame');
+        const leftToast = document.getElementById('toast-l');
+        const rightToast = document.getElementById('toast-r');
+
+        let currentStream = null;
+
+        // ================= 1. PORTAL NOTIFICATION & LAUNCH ENGINE =================
+        function triggerSystemToast(appName) {
+            const text = `LOADING [${appName}]...`;
+            leftToast.innerText = text;
+            rightToast.innerText = text;
+            
+            leftToast.classList.add('visible');
+            rightToast.classList.add('visible');
+            
+            setTimeout(() => {
+                leftToast.classList.remove('visible');
+                rightToast.classList.remove('visible');
+            }, 3000);
+        }
+
+        function launchAppMatrix(appName, targetUrl) {
+            console.log(`Routing core viewports to application package: ${appName}`);
+            triggerSystemToast(appName);
+            
+            leftPortal.src = targetUrl;
+            rightPortal.src = targetUrl;
+        }
+
+        launchButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const appName = e.target.getAttribute('data-app');
+                const targetUrl = e.target.getAttribute('data-url');
+                launchAppMatrix(appName, targetUrl);
+            });
+        });
+
+        // ================= 2. UPGRADED MULTI-CAMERA HARDWARE DRIVER =================
+        async function discoverCameras() {
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoInputs = devices.filter(device => device.kind === 'videoinput');
+
+                cameraSelect.innerHTML = '';
+                if (videoInputs.length === 0) {
+                    cameraSelect.innerHTML = '<option>NO LENS HARDWARE DETECTED</option>';
+                    return;
+                }
+
+                videoInputs.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `HARDWARE CHANNEL ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                bindCameraStream(videoInputs[0].deviceId);
+            } catch (err) {
+                console.error("Hardware Context Protection Fault:", err);
+                cameraSelect.innerHTML = '<option>HARDWARE BLOCKED</option>';
+            }
+        }
+
+        async function bindCameraStream(deviceId) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+
+                videoFeeds.forEach(feed => {
+                    feed.srcObject = stream;
+                    feed.onloadedmetadata = () => { feed.play().catch(e => console.log("Autoplay blocked:", e)); };
+                });
+            } catch (err) {
+                console.error("Stream mapping matrix configuration failure:", err);
+            }
+        }
+
+        cameraSelect.addEventListener('change', (e) => { if (e.target.value) bindCameraStream(e.target.value); });
+        document.addEventListener('DOMContentLoaded', discoverCameras);
+
+        // Register Service Worker for PWA compliance
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('VR_OS: SW pipeline loaded.', reg.scope))
+                    .catch(err => console.error('VR_OS: SW setup failed:', err));
+            });
+        }
+    </script>
 </body>
 </html>
