@@ -1,11 +1,17 @@
 {
-  "name": "AR Camera App",
-  "short_name": "ARApp",
+  "name": "Project Studios VR OS",
+  "short_name": "VR_OS",
   "start_url": "index.html",
   "display": "fullscreen",
+  "orientation": "landscape",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
-    { "src": "icon.png", "sizes": "192x192", "type": "image/png" }
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
