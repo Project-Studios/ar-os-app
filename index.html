@@ -9,108 +9,114 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body, html { width: 100%; height: 100%; background-color: #000; overflow: hidden; font-family: sans-serif; }
+        body, html { width: 100%; height: 100%; background-color: #000; overflow: hidden; font-family: 'Courier New', monospace; }
         
-        /* Camera Control UI Overlay */
-        #os-ui-layer {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        /* Camera Control Tool Bar */
+        #os-hardware-bar {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: rgba(0, 255, 204, 0.15); backdrop-filter: blur(5px); padding: 5px 15px; border-radius: 10px; border: 1px solid #00ffcc;
         }
-        #cameraSelect {
-            background: transparent;
-            color: #fff;
-            border: none;
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-        }
-        #cameraSelect option { background: #111; color: #fff; }
+        #cameraSelect { background: transparent; color: #00ffcc; border: none; font-size: 11px; outline: none; font-family: monospace; cursor: pointer; }
+        #cameraSelect option { background: #000; color: #00ffcc; }
 
-        /* VR Split Screen Architecture */
-        #vr-container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-        }
-        .viewports {
-            position: relative;
-            width: 50%;
-            height: 100%;
-            overflow: hidden;
-            border-right: 1px solid rgba(255,255,255,0.05);
-        }
-        .viewports:last-child { border-right: none; }
+        /* VR Split Screen Matrix */
+        #vr-matrix { display: flex; width: 100vw; height: 100vh; }
+        .viewport { position: relative; width: 50%; height: 100%; overflow: hidden; border-right: 1px solid rgba(0, 255, 204, 0.2); }
+        .viewport:last-child { border-right: none; }
 
-        /* Background Video Feed Mapping */
-        .bg-video-feed {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: translate(-50%, -50%);
-            z-index: 1;
-        }
+        /* Camera Background Streams */
+        .bg-video-feed { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: cover; transform: translate(-50%, -50%); z-index: 1; opacity: 0.5; }
 
-        /* Interactive HUD Overlay Grid */
-        .hud-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 40px;
-            color: #00ffcc;
-            text-shadow: 0 0 5px #00ffcc;
+        /* Immersive HUD Shell */
+        .hud-system { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; color: #00ffcc; text-shadow: 0 0 8px rgba(0, 255, 204, 0.6); }
+        .header-dash { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px dashed rgba(0, 255, 204, 0.3); padding-bottom: 5px; }
+        
+        /* App Selection Dashboard Layout */
+        .app-grid-dashboard { display: flex; gap: 15px; justify-content: center; margin: 10px 0; z-index: 10; }
+        .os-btn {
+            background: rgba(0, 255, 204, 0.1); border: 1px solid #00ffcc; color: #00ffcc;
+            padding: 6px 16px; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold;
+            border-radius: 4px; cursor: pointer; transition: all 0.2s ease;
         }
-        .status-bar { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; }
-        .center-matrix { display: flex; justify-content: center; align-items: center; flex-grow: 1; }
-        .reticle { width: 12px; height: 12px; border: 2px solid #00ffcc; border-radius: 50%; opacity: 0.7; }
-        .widget-panel { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
+        .os-btn:hover { background: rgba(0, 255, 204, 0.3); boxShadow: 0 0 10px #00ffcc; }
+
+        /* Sync-Linked App Portals */
+        .app-portal-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; width: 100%; height: 55%; padding: 10px; }
+        .portal-frame { width: 100%; height: 100%; border: 1px solid rgba(0, 255, 204, 0.4); background: rgba(0, 0, 0, 0.6); border-radius: 4px; }
+
+        /* Core System Crosshair */
+        .reticle { width: 16px; height: 16px; border: 1px solid #00ffcc; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; opacity: 0.4; }
+
+        .footer-dash { display: flex; justify-content: space-between; font-size: 11px; border-top: 1px dashed rgba(0, 255, 204, 0.3); padding-top: 5px; }
+
+        /* The Custom Corner Loading Alert Toast Node */
+        .alert-toast {
+            position: absolute; bottom: 45px; right: 25px;
+            background: rgba(0, 0, 0, 0.85); border-left: 3px solid #00ffcc;
+            color: #00ffcc; padding: 6px 12px; font-size: 10px; letter-spacing: 1px;
+            opacity: 0; transform: translateY(10px); transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            pointer-events: none; border-radius: 0 4px 4px 0; box-shadow: 0 0 8px rgba(0,255,204,0.2);
+        }
+        .alert-toast.visible { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body>
 
-    <!-- OS Control Layer -->
-    <div id="os-ui-layer">
-        <select id="cameraSelect">
-            <option value="">Initializing Video...</option>
-        </select>
+    <!-- Main OS Hardware Node Dropdown -->
+    <div id="os-hardware-bar">
+        <select id="cameraSelect"><option value="">LOADING HARDWARE ENGINE...</option></select>
     </div>
 
-    <!-- Dual Viewport VR Setup -->
-    <div id="vr-container">
-        <!-- Left Eye -->
-        <div class="viewports" id="left-eye">
+    <div id="vr-matrix">
+        
+        <!-- ================= LEFT EYE PORTAL ================= -->
+        <div class="viewport" id="viewport-l">
             <video class="bg-video-feed" autoplay playsinline muted></video>
-            <div class="hud-overlay">
-                <div class="status-bar"><span>SYS_OK</span><span>BAT: 100%</span></div>
-                <div class="center-matrix"><div class="reticle"></div></div>
-                <div class="widget-panel"><span>PROJECT_STUDIOS // VR_OS</span></div>
+            <div class="hud-system">
+                <div class="header-dash"><span>STUDIOS_OS // V2.5</span><span>BAT: 100%</span></div>
+                
+                <!-- Dashboard Control Interface Line -->
+                <div class="app-grid-dashboard">
+                    <button class="os-btn launch-btn" data-app="CHESS" data-url="https://www.chess.com/play/online">CHESS</button>
+                    <button class="os-btn launch-btn" data-app="MEDIA" data-url="https://www.youtube.com/embed">MEDIA</button>
+                    <button class="os-btn launch-btn" data-app="HOME" data-url="about:blank">RESET</button>
+                </div>
+                
+                <div class="app-portal-container">
+                    <iframe class="portal-frame" src="about:blank" frameborder="0"></iframe>
+                </div>
+                
+                <div class="reticle"></div>
+                <div class="footer-dash"><span>STATUS: MONITOR_OK</span><span>CHANNEL: L_EYE</span></div>
+                <!-- Notification Element -->
+                <div class="alert-toast" id="toast-l">SYSTEM_INITIALIZED</div>
             </div>
         </div>
         
-        <!-- Right Eye -->
-        <div class="viewports" id="right-eye">
+        <!-- ================= RIGHT EYE PORTAL ================= -->
+        <div class="viewport" id="viewport-r">
             <video class="bg-video-feed" autoplay playsinline muted></video>
-            <div class="hud-overlay">
-                <div class="status-bar"><span>SYS_OK</span><span>BAT: 100%</span></div>
-                <div class="center-matrix"><div class="reticle"></div></div>
-                <div class="widget-panel"><span>PROJECT_STUDIOS // VR_OS</span></div>
+            <div class="hud-system">
+                <div class="header-dash"><span>STUDIOS_OS // V2.5</span><span>BAT: 100%</span></div>
+                
+                <!-- Duplicate interactive dashboard grid row for right-eye convergence symmetry -->
+                <div class="app-grid-dashboard">
+                    <button class="os-btn launch-btn" data-app="CHESS" data-url="https://www.chess.com/play/online">CHESS</button>
+                    <button class="os-btn launch-btn" data-app="MEDIA" data-url="https://www.youtube.com/embed">MEDIA</button>
+                    <button class="os-btn launch-btn" data-app="HOME" data-url="about:blank">RESET</button>
+                </div>
+                
+                <div class="app-portal-container">
+                    <iframe class="portal-frame" src="about:blank" frameborder="0"></iframe>
+                </div>
+                
+                <div class="reticle"></div>
+                <div class="footer-dash"><span>STATUS: MONITOR_OK</span><span>CHANNEL: R_EYE</span></div>
+                <!-- Notification Element -->
+                <div class="alert-toast" id="toast-r">SYSTEM_INITIALIZED</div>
             </div>
         </div>
+
     </div>
 
     <script src="app.js"></script>
